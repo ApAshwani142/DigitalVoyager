@@ -1,11 +1,6 @@
-// API Configuration
-// This file centralizes all API endpoint URLs
-// In production, use environment variables for the base URL
-
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://digitalvoyager.onrender.com';
 
 export const API_ENDPOINTS = {
-  // Auth endpoints
   LOGIN: `${API_BASE_URL}/api/auth/login`,
   REGISTER: `${API_BASE_URL}/api/auth/register`,
   SEND_OTP: `${API_BASE_URL}/api/auth/send-otp`,
@@ -15,15 +10,9 @@ export const API_ENDPOINTS = {
   RESET_PASSWORD: (token) => `${API_BASE_URL}/api/auth/reset-password/${token}`,
   GET_ME: `${API_BASE_URL}/api/auth/me`,
   UPDATE_PROFILE: `${API_BASE_URL}/api/auth/update-profile`,
-  
-  // Product endpoints
   PRODUCTS: `${API_BASE_URL}/api/products`,
   PRODUCT_BY_ID: (id) => `${API_BASE_URL}/api/products/${id}`,
-  
-  // Chat endpoints
   CHAT: `${API_BASE_URL}/api/chat`,
-  
-  // Contact endpoints
   CONTACT_SEND: `${API_BASE_URL}/api/contact/send`,
 };
 
