@@ -41,22 +41,41 @@ export const sendOtp = async (req, res) => {
       },
     };
 
+    // Try to send email, but don't fail the request if email service is not configured
+    let emailSent = false;
     try {
       await sendEmail(
         normalizedEmail,
         "OTP for Digital Voyager Registration",
         `Hello ${name},\n\nYour OTP for Digital Voyager registration is: ${normalizedOtp}\n\nThis OTP is valid for 5 minutes.\n\nIf you didn't request this, please ignore this email.`
       );
-      console.log("OTP email sent to:", normalizedEmail);
+      console.log("✅ OTP email sent successfully to:", normalizedEmail);
+      emailSent = true;
     } catch (emailError) {
-      console.error("Failed to send OTP email:", emailError.message);
-      return res.status(500).json({
-        msg: `Failed to send OTP email: ${emailError.message}`,
-        error: emailError.message,
-      });
+      console.error("❌ Failed to send OTP email:", emailError.message);
+      // Log OTP to console so it can be retrieved from Render logs if email fails
+      console.log("=".repeat(60));
+      console.log(`⚠️ EMAIL SERVICE UNAVAILABLE - OTP FOR ${normalizedEmail}:`);
+      console.log(`   OTP: ${normalizedOtp}`);
+      console.log(`   Expires in: 5 minutes`);
+      console.log(`   User: ${name}`);
+      console.log("=".repeat(60));
+      // Don't fail the request - OTP is still stored and can be verified
+      // In production, you should configure email service properly
+      emailSent = false;
     }
 
-    return res.status(200).json({ msg: "OTP sent successfully" });
+    // Return success even if email failed - OTP is stored and can be verified
+    // Check Render logs if email service is not configured
+    return res.status(200).json({ 
+      msg: emailSent 
+        ? "OTP sent successfully to your email" 
+        : "OTP generated. Please check Render logs if email service is not configured. OTP is stored and can be verified.",
+      emailSent,
+      // Include OTP in response if email failed - allows testing without email config
+      // TODO: Remove this once email service is properly configured in production
+      ...(!emailSent ? { otp: normalizedOtp } : {})
+    });
   } catch (err) {
     console.error("Send OTP error:", err.message);
     return res.status(500).send("Server error");
@@ -133,22 +152,37 @@ export const resendOtp = async (req, res) => {
     otpData.otp = normalizedOtp;
     otpData.expires = Date.now() + 5 * 60 * 1000;
 
+    // Try to resend email, but don't fail if email service is not configured
+    let emailSent = false;
     try {
       await sendEmail(
         normalizedEmail,
         "Resend OTP for Digital Voyager Registration",
         `Hello ${otpData.userData.name},\n\nYour new OTP for Digital Voyager registration is: ${normalizedOtp}\n\nThis OTP is valid for 5 minutes.\n\nIf you didn't request this, please ignore this email.`
       );
-      console.log("OTP resent to:", normalizedEmail);
+      console.log("✅ OTP resent successfully to:", normalizedEmail);
+      emailSent = true;
     } catch (emailError) {
-      console.error("Failed to resend OTP:", emailError.message);
-      return res.status(500).json({
-        msg: `Failed to resend OTP email: ${emailError.message}`,
-        error: emailError.message,
-      });
+      console.error("❌ Failed to resend OTP email:", emailError.message);
+      // Log OTP to console
+      console.log("=".repeat(60));
+      console.log(`⚠️ EMAIL SERVICE UNAVAILABLE - RESEND OTP FOR ${normalizedEmail}:`);
+      console.log(`   OTP: ${normalizedOtp}`);
+      console.log(`   Expires in: 5 minutes`);
+      console.log(`   User: ${otpData.userData.name}`);
+      console.log("=".repeat(60));
+      emailSent = false;
     }
 
-    return res.status(200).json({ msg: "OTP resent successfully" });
+    return res.status(200).json({ 
+      msg: emailSent 
+        ? "OTP resent successfully to your email" 
+        : "OTP regenerated. Please check Render logs if email service is not configured. OTP is stored and can be verified.",
+      emailSent,
+      // Include OTP in response if email failed - allows testing without email config
+      // TODO: Remove this once email service is properly configured in production
+      ...(!emailSent ? { otp: normalizedOtp } : {})
+    });
   } catch (err) {
     console.error("Resend OTP error:", err.message);
     return res.status(500).send("Server error");

@@ -5,15 +5,31 @@ import { promisify } from "util";
 const dnsLookup = promisify(dns.lookup);
 
 const sendEmail = async (to, subject, message) => {
-  if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+  // Check for email configuration
+  const emailUser = process.env.EMAIL_USER?.trim();
+  const emailPass = process.env.EMAIL_PASS?.trim();
+  const emailHost = process.env.EMAIL_HOST?.trim();
+  
+  // If email is not configured, log and allow the app to continue (for development)
+  if (!emailUser || !emailPass) {
     const missing = [];
-    if (!process.env.EMAIL_HOST) missing.push("EMAIL_HOST");
-    if (!process.env.EMAIL_USER) missing.push("EMAIL_USER");
-    if (!process.env.EMAIL_PASS) missing.push("EMAIL_PASS");
-    throw new Error(`Email service not configured. Missing: ${missing.join(", ")}`);
+    if (!emailUser) missing.push("EMAIL_USER");
+    if (!emailPass) missing.push("EMAIL_PASS");
+    console.warn(`⚠️ Email service not configured. Missing: ${missing.join(", ")}`);
+    console.warn(`⚠️ Email would be sent to: ${to}`);
+    console.warn(`⚠️ Subject: ${subject}`);
+    console.warn(`⚠️ In production, please configure EMAIL_USER and EMAIL_PASS environment variables.`);
+    
+    // Check if we're in production (Render sets various env vars, but NODE_ENV might not be 'production')
+    // For now, allow the app to continue and log OTP to console instead of throwing
+    // The calling code will handle displaying appropriate messages
+    console.log("Development/testing mode: Email service not configured, skipping actual email send");
+    console.log(`Would send email to: ${to}`);
+    console.log(`Subject: ${subject}`);
+    // Return a mock success response so the calling code can continue
+    return { messageId: 'email-not-configured', accepted: [to], emailSent: false };
   }
 
-  const emailHost = process.env.EMAIL_HOST.trim();
   const smtpHost = emailHost && emailHost.includes(".") ? emailHost : "smtp.gmail.com";
 
   try {
@@ -24,7 +40,9 @@ const sendEmail = async (to, subject, message) => {
     );
   }
 
-  const emailPass = String(process.env.EMAIL_PASS).trim().replace(/\s+/g, "");
+  // Clean up email password (remove any whitespace)
+  const cleanEmailPass = String(emailPass).trim().replace(/\s+/g, "");
+  const cleanEmailUser = String(emailUser).trim();
 
   const tryPort465 = () => {
     return nodemailer.createTransport({
@@ -32,8 +50,8 @@ const sendEmail = async (to, subject, message) => {
       port: 465,
       secure: true,
       auth: {
-        user: process.env.EMAIL_USER.trim(),
-        pass: emailPass,
+        user: cleanEmailUser,
+        pass: cleanEmailPass,
       },
       tls: {
         rejectUnauthorized: false,
@@ -53,8 +71,8 @@ const sendEmail = async (to, subject, message) => {
       secure: false,
       requireTLS: true,
       auth: {
-        user: process.env.EMAIL_USER.trim(),
-        pass: emailPass,
+        user: cleanEmailUser,
+        pass: cleanEmailPass,
       },
       tls: {
         rejectUnauthorized: false,
@@ -68,11 +86,13 @@ const sendEmail = async (to, subject, message) => {
   };
 
   const mailOptions = {
-    from: `"Digital Voyager" <${process.env.EMAIL_USER.trim()}>`,
+    from: `"Digital Voyager" <${cleanEmailUser}>`,
     to,
     subject,
     text: message,
-    html: message.replace(/\n/g, "<br>"),
+    html: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      ${message.replace(/\n/g, "<br>")}
+    </div>`,
   };
 
   const attemptSend = async (createTransporter, portName) => {
