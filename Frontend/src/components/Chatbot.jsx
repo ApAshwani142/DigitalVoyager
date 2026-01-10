@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
+import { API_ENDPOINTS } from "../config/api";
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -33,7 +34,7 @@ const Chatbot = () => {
         m.from === "user" ? { user: m.text } : { bot: m.text }
       );
 
-      const res = await axios.post("http://localhost:5000/api/chat", {
+      const res = await axios.post(API_ENDPOINTS.CHAT, {
         message: trimmed,
         history,
       });

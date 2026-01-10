@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import { API_ENDPOINTS } from "../config/api";
 
 const Login = () => {
   const smooth = { duration: 0.4, ease: "easeInOut" };
@@ -21,7 +22,7 @@ const Login = () => {
     setMessage("");
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch(API_ENDPOINTS.LOGIN, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

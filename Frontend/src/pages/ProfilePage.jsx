@@ -7,6 +7,7 @@ import ErrorMessage from '../components/ErrorMessage';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Calendar, Shield, Edit, LogOut, Settings, Award, Clock } from 'lucide-react';
+import { API_ENDPOINTS } from '../config/api';
 
 const ProfilePage = () => {
   const { token, isAuthenticated, logout, user: contextUser } = useAuth();
@@ -31,7 +32,7 @@ const ProfilePage = () => {
             'x-auth-token': token,
           },
         };
-        const res = await axios.get('http://localhost:5000/api/auth/me', config);
+        const res = await axios.get(API_ENDPOINTS.GET_ME, config);
         setUserData(res.data);
       } catch (err) {
         console.error('Error fetching user profile:', err);

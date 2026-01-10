@@ -8,6 +8,7 @@ import EditProfileForm from "../components/EditProfileForm";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage from "../components/ErrorMessage";
 import { toast } from "react-toastify";
+import { API_ENDPOINTS } from "../config/api";
 
 const EditProfilePage = () => {
   const { token, isAuthenticated, user: contextUser } = useAuth();
@@ -36,7 +37,7 @@ const EditProfilePage = () => {
             "x-auth-token": token,
           },
         };
-        const res = await axios.get("http://localhost:5000/api/auth/me", config);
+        const res = await axios.get(API_ENDPOINTS.GET_ME, config);
         setUserData(res.data);
         setLoading(false);
       } catch (err) {

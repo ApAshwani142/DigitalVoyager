@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import { API_ENDPOINTS } from "../config/api";
 
 const ResetPassword = () => {
   const smooth = { duration: 0.4, ease: "easeInOut" };
@@ -41,7 +42,7 @@ const ResetPassword = () => {
     setLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:5000/api/auth/reset-password/${resetToken}`,
+        API_ENDPOINTS.RESET_PASSWORD(resetToken),
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

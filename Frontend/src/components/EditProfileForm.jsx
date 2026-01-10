@@ -4,6 +4,7 @@ import { User, Mail, Save, X } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import { API_ENDPOINTS } from "../config/api";
 
 const EditProfileForm = ({ userData, onCancel, onSave }) => {
   const { token } = useAuth();
@@ -57,7 +58,7 @@ const EditProfileForm = ({ userData, onCancel, onSave }) => {
       };
 
       const res = await axios.put(
-        "http://localhost:5000/api/auth/update-profile",
+        API_ENDPOINTS.UPDATE_PROFILE,
         formData,
         config
       );

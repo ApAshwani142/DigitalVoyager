@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { validateEmail } from "../utils/validateEmail.js";
+import { API_ENDPOINTS } from "../config/api";
 
 const ForgotPassword = () => {
   const smooth = { duration: 0.4, ease: "easeInOut" };
@@ -28,7 +29,7 @@ const ForgotPassword = () => {
     try {
       const normalizedEmail = email.trim().toLowerCase();
       
-      const res = await fetch("http://localhost:5000/api/auth/forgot-password", {
+      const res = await fetch(API_ENDPOINTS.FORGOT_PASSWORD, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: normalizedEmail }),

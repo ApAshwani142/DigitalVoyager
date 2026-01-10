@@ -6,6 +6,7 @@ import emailjs from "@emailjs/browser";
 import { generateOTP } from "../utils/generateOTP.js";
 import { validateEmail, checkEmailDomain } from "../utils/validateEmail.js";
 import { toast } from "react-toastify";
+import { API_ENDPOINTS } from "../config/api";
 
 const Signup = () => {
   const smooth = { duration: 0.4, ease: "easeInOut" };
@@ -103,7 +104,7 @@ const Signup = () => {
         );
       }
 
-      const res = await fetch("http://localhost:5000/api/auth/send-otp", {
+      const res = await fetch(API_ENDPOINTS.SEND_OTP, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email: normalizedEmail, password, otp: newOtp }),
@@ -162,7 +163,7 @@ const Signup = () => {
     try {
       const normalizedEmail = email.trim().toLowerCase();
       
-      const res = await fetch("http://localhost:5000/api/auth/verify-otp", {
+      const res = await fetch(API_ENDPOINTS.VERIFY_OTP, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: normalizedEmail, otp: normalizedOtp }),
@@ -224,7 +225,7 @@ const Signup = () => {
         );
       }
 
-      const res = await fetch("http://localhost:5000/api/auth/resend-otp", {
+      const res = await fetch(API_ENDPOINTS.RESEND_OTP, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: normalizedEmail, otp: newOtp }),

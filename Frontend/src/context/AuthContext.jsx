@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from 'axios'; // Import axios
+import { API_ENDPOINTS } from '../config/api';
 
 const AuthContext = createContext();
 
@@ -23,7 +24,7 @@ export const AuthProvider = ({ children }) => {
               'x-auth-token': storedToken,
             },
           };
-          const res = await axios.get('http://localhost:5000/api/auth/me', config);
+          const res = await axios.get(API_ENDPOINTS.GET_ME, config);
           setUser(res.data);
         } else {
           setIsAuthenticated(false);

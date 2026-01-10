@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import ServicesHero from '../components/ServicesHero'; // Import ServicesHero
 import ServicesGrid from '../components/ServicesGrid'; // Import ServicesGrid
 import CTA from '../components/CTA'; // Import CTA
+import { API_ENDPOINTS } from '../config/api';
 
 const containerVariants = {
   initial: { opacity: 0 },
@@ -44,7 +45,7 @@ const ProductsPage = () => {
             'x-auth-token': token,
           },
         };
-        const res = await axios.get('http://localhost:5000/api/products', config);
+        const res = await axios.get(API_ENDPOINTS.PRODUCTS, config);
         setProducts(res.data);
         setError(null);
       } catch (err) {

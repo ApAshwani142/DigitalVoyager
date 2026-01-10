@@ -3,6 +3,7 @@ import { Phone, Mail, MapPin, Clock, AlertTriangle, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { API_ENDPOINTS } from "../config/api";
 
 const ContactInfo = () => {
   const [formData, setFormData] = useState({
@@ -27,7 +28,7 @@ const ContactInfo = () => {
     }
     setSubmitting(true);
     try {
-      await axios.post("http://localhost:5000/api/contact/send", formData);
+      await axios.post(API_ENDPOINTS.CONTACT_SEND, formData);
       toast.success("Message sent! We will get back to you shortly.");
       setFormData({
         name: "",

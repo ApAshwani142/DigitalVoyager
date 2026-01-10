@@ -18,7 +18,14 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [
+      "https://dgvoyager.com",
+      "https://www.dgvoyager.com",
+      "http://dgvoyager.com",
+      "http://www.dgvoyager.com",
+      "http://localhost:5173", // For local development
+      "http://localhost:3000", // For local development
+    ],
     credentials: true,
   })
 );

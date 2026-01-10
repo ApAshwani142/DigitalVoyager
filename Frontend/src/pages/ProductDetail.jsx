@@ -9,6 +9,7 @@ import LoadingSpinner from '../components/LoadingSpinner'; // Assuming you have 
 import ErrorMessage from '../components/ErrorMessage';     // Assuming you have this
 import { toast } from 'react-toastify';
 import { isHardcodedService, getHardcodedService } from '../utils/hardcodedServices';
+import { API_ENDPOINTS } from '../config/api';
 
 const productPageVariants = {
   initial: { opacity: 0, y: 50 },
@@ -56,7 +57,7 @@ const ProductDetail = () => {
           },
         };
         
-        const res = await axios.get(`http://localhost:5000/api/products/${id}`, config);
+        const res = await axios.get(API_ENDPOINTS.PRODUCT_BY_ID(id), config);
         setProduct(res.data);
       } catch (err) {
         console.error('Error fetching product:', err);
