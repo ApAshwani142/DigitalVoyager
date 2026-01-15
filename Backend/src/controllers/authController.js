@@ -7,6 +7,7 @@ import crypto from "crypto";
 
 const otpStore = {};
 
+/* ========================= SEND OTP ========================= */
 export const sendOtp = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -16,8 +17,8 @@ export const sendOtp = async (req, res) => {
   const { name, email, password, otp } = req.body;
 
   try {
-    const existing = await User.findOne({ email });
-    if (existing) {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return res.status(400).json({ msg: "User already exists" });
     }
 
@@ -28,8 +29,8 @@ export const sendOtp = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const normalizedOtp = String(otp).trim().replace(/\D/g, "");
     const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedOtp = String(otp).trim().replace(/\D/g, "");
 
     otpStore[normalizedEmail] = {
       otp: normalizedOtp,
@@ -41,47 +42,53 @@ export const sendOtp = async (req, res) => {
       },
     };
 
-    // Try to send email, but don't fail the request if email service is not configured
-    let emailSent = false;
+    // Send OTP email - email service is now required
     try {
-      await sendEmail(
+      const emailResult = await sendEmail(
         normalizedEmail,
         "OTP for Digital Voyager Registration",
-        `Hello ${name},\n\nYour OTP for Digital Voyager registration is: ${normalizedOtp}\n\nThis OTP is valid for 5 minutes.\n\nIf you didn't request this, please ignore this email.`
+        `Hello ${name},
+
+Your OTP for Digital Voyager registration is: ${normalizedOtp}
+
+This OTP is valid for 5 minutes.
+
+If you didn't request this, please ignore this email.
+
+Best regards,
+Digital Voyager Team`
       );
+      
       console.log("✅ OTP email sent successfully to:", normalizedEmail);
-      emailSent = true;
+      console.log("✅ Email result:", emailResult);
+      
+      return res.status(200).json({ 
+        msg: "OTP sent successfully! Please check your email inbox (and spam folder).",
+        emailSent: true
+      });
     } catch (emailError) {
       console.error("❌ Failed to send OTP email:", emailError.message);
-      // Log OTP to console so it can be retrieved from Render logs if email fails
+      console.error("❌ Email error details:", emailError);
+      
+      // Log OTP to console as fallback (for debugging)
       console.log("=".repeat(60));
-      console.log(`⚠️ EMAIL SERVICE UNAVAILABLE - OTP FOR ${normalizedEmail}:`);
-      console.log(`   OTP: ${normalizedOtp}`);
-      console.log(`   Expires in: 5 minutes`);
-      console.log(`   User: ${name}`);
+      console.log(`⚠️ FALLBACK - OTP FOR ${normalizedEmail}: ${normalizedOtp}`);
+      console.log(`⚠️ Email error: ${emailError.message}`);
       console.log("=".repeat(60));
-      // Don't fail the request - OTP is still stored and can be verified
-      // In production, you should configure email service properly
-      emailSent = false;
+      
+      // Return error - email is required
+      return res.status(500).json({
+        msg: `Failed to send OTP email: ${emailError.message}. Please check your email configuration in Render.`,
+        error: emailError.message,
+      });
     }
-
-    // Return success even if email failed - OTP is stored and can be verified
-    // Check Render logs if email service is not configured
-    return res.status(200).json({ 
-      msg: emailSent 
-        ? "OTP sent successfully to your email" 
-        : "OTP generated. Please check Render logs if email service is not configured. OTP is stored and can be verified.",
-      emailSent,
-      // Include OTP in response if email failed - allows testing without email config
-      // TODO: Remove this once email service is properly configured in production
-      ...(!emailSent ? { otp: normalizedOtp } : {})
-    });
   } catch (err) {
     console.error("Send OTP error:", err.message);
     return res.status(500).send("Server error");
   }
 };
 
+/* ========================= VERIFY OTP ========================= */
 export const verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
 
@@ -90,32 +97,33 @@ export const verifyOtp = async (req, res) => {
   }
 
   try {
+    const normalizedEmail = String(email).trim().toLowerCase();
     const normalizedOtp = String(otp).trim().replace(/\D/g, "");
 
-    if (!normalizedOtp || normalizedOtp.length !== 6) {
-      return res.status(400).json({ msg: "Invalid OTP format. Must be 6 digits." });
+    if (normalizedOtp.length !== 6) {
+      return res.status(400).json({ msg: "Invalid OTP format" });
     }
 
-    const normalizedEmail = String(email).trim().toLowerCase();
     const otpData = otpStore[normalizedEmail];
-
     if (!otpData) {
-      return res.status(400).json({ msg: "OTP not found. Please request a new OTP." });
+      return res.status(400).json({ msg: "OTP not found" });
     }
-
-    const storedOtp = String(otpData.otp).trim().replace(/\D/g, "");
 
     if (otpData.expires < Date.now()) {
       delete otpStore[normalizedEmail];
-      return res.status(400).json({ msg: "OTP has expired. Please request a new OTP." });
+      return res.status(400).json({ msg: "OTP expired" });
     }
 
-    if (storedOtp !== normalizedOtp) {
-      return res.status(400).json({ msg: "Invalid OTP. Please check and try again." });
+    if (otpData.otp !== normalizedOtp) {
+      return res.status(400).json({ msg: "Invalid OTP" });
     }
 
     const { name, password } = otpData.userData;
-    const user = await User.create({ name, email: normalizedEmail, password });
+    const user = await User.create({
+      name,
+      email: normalizedEmail,
+      password,
+    });
 
     delete otpStore[normalizedEmail];
 
@@ -131,6 +139,7 @@ export const verifyOtp = async (req, res) => {
   }
 };
 
+/* ========================= RESEND OTP ========================= */
 export const resendOtp = async (req, res) => {
   const { email, otp } = req.body;
 
@@ -139,9 +148,7 @@ export const resendOtp = async (req, res) => {
     const otpData = otpStore[normalizedEmail];
 
     if (!otpData) {
-      return res.status(400).json({
-        msg: "User data not found. Please start the signup process again.",
-      });
+      return res.status(400).json({ msg: "User data not found" });
     }
 
     if (!otp) {
@@ -152,43 +159,53 @@ export const resendOtp = async (req, res) => {
     otpData.otp = normalizedOtp;
     otpData.expires = Date.now() + 5 * 60 * 1000;
 
-    // Try to resend email, but don't fail if email service is not configured
-    let emailSent = false;
+    // Resend OTP email - email service is now required
     try {
-      await sendEmail(
+      const emailResult = await sendEmail(
         normalizedEmail,
         "Resend OTP for Digital Voyager Registration",
-        `Hello ${otpData.userData.name},\n\nYour new OTP for Digital Voyager registration is: ${normalizedOtp}\n\nThis OTP is valid for 5 minutes.\n\nIf you didn't request this, please ignore this email.`
+        `Hello ${otpData.userData.name},
+
+Your new OTP for Digital Voyager registration is: ${normalizedOtp}
+
+This OTP is valid for 5 minutes.
+
+If you didn't request this, please ignore this email.
+
+Best regards,
+Digital Voyager Team`
       );
+      
       console.log("✅ OTP resent successfully to:", normalizedEmail);
-      emailSent = true;
+      console.log("✅ Email result:", emailResult);
+      
+      return res.status(200).json({ 
+        msg: "OTP resent successfully! Please check your email inbox (and spam folder).",
+        emailSent: true
+      });
     } catch (emailError) {
       console.error("❌ Failed to resend OTP email:", emailError.message);
-      // Log OTP to console
+      console.error("❌ Email error details:", emailError);
+      
+      // Log OTP to console as fallback (for debugging)
       console.log("=".repeat(60));
-      console.log(`⚠️ EMAIL SERVICE UNAVAILABLE - RESEND OTP FOR ${normalizedEmail}:`);
-      console.log(`   OTP: ${normalizedOtp}`);
-      console.log(`   Expires in: 5 minutes`);
-      console.log(`   User: ${otpData.userData.name}`);
+      console.log(`⚠️ FALLBACK - RESEND OTP FOR ${normalizedEmail}: ${normalizedOtp}`);
+      console.log(`⚠️ Email error: ${emailError.message}`);
       console.log("=".repeat(60));
-      emailSent = false;
+      
+      // Return error - email is required
+      return res.status(500).json({
+        msg: `Failed to resend OTP email: ${emailError.message}. Please check your email configuration in Render.`,
+        error: emailError.message,
+      });
     }
-
-    return res.status(200).json({ 
-      msg: emailSent 
-        ? "OTP resent successfully to your email" 
-        : "OTP regenerated. Please check Render logs if email service is not configured. OTP is stored and can be verified.",
-      emailSent,
-      // Include OTP in response if email failed - allows testing without email config
-      // TODO: Remove this once email service is properly configured in production
-      ...(!emailSent ? { otp: normalizedOtp } : {})
-    });
   } catch (err) {
     console.error("Resend OTP error:", err.message);
     return res.status(500).send("Server error");
   }
 };
 
+/* ========================= LOGIN ========================= */
 export const loginUser = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -220,6 +237,7 @@ export const loginUser = async (req, res) => {
   }
 };
 
+/* ========================= FORGOT PASSWORD ========================= */
 export const forgotPassword = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -234,56 +252,58 @@ export const forgotPassword = async (req, res) => {
 
     if (!user) {
       return res.status(200).json({
-        msg: "If that email exists, a password reset link has been sent.",
+        msg: "If that email exists, a reset link has been sent.",
       });
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-    user.passwordResetToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-    user.passwordResetExpires = Date.now() + 3600000;
 
+    user.passwordResetToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    user.passwordResetExpires = Date.now() + 3600000;
     await user.save();
 
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
     const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
 
-    const emailMessage = `Hello ${user.name},\n\nYou requested to reset your password for your Digital Voyager account.\n\nClick the link below to reset your password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you did not request this password reset, please ignore this email and your password will remain unchanged.\n\nBest regards,\nDigital Voyager Team`;
+    await sendEmail(
+      normalizedEmail,
+      "Password Reset Request - Digital Voyager",
+      `Hello ${user.name},
 
-    try {
-      await sendEmail(normalizedEmail, "Password Reset Request - Digital Voyager", emailMessage);
-      console.log("Password reset email sent to:", normalizedEmail);
-      res.status(200).json({
-        msg: "If that email exists, a password reset link has been sent.",
-      });
-    } catch (emailError) {
-      user.passwordResetToken = undefined;
-      user.passwordResetExpires = undefined;
-      await user.save();
-      console.error("Error sending password reset email:", emailError.message);
-      return res.status(500).json({
-        msg: "Error sending password reset email. Please try again later.",
-      });
-    }
+Reset your password using the link below:
+
+${resetUrl}
+
+This link will expire in 1 hour.`
+    );
+
+    return res.status(200).json({
+      msg: "If that email exists, a reset link has been sent.",
+    });
   } catch (err) {
     console.error("Forgot password error:", err.message);
-    res.status(500).json({ msg: "Server error" });
+    return res.status(500).json({ msg: "Server error" });
   }
 };
 
+/* ========================= RESET PASSWORD ========================= */
 export const resetPassword = async (req, res) => {
   const { resetToken } = req.params;
   const { password } = req.body;
 
   try {
-    if (!resetToken) {
-      return res.status(400).json({ msg: "Reset token is required" });
-    }
-
     if (!password || password.length < 6) {
-      return res.status(400).json({ msg: "Password must be at least 6 characters" });
+      return res.status(400).json({ msg: "Password too short" });
     }
 
-    const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
 
     const user = await User.findOne({
       passwordResetToken: hashedToken,
@@ -291,9 +311,7 @@ export const resetPassword = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({
-        msg: "Invalid or expired reset token. Please request a new password reset link.",
-      });
+      return res.status(400).json({ msg: "Invalid or expired token" });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -303,24 +321,23 @@ export const resetPassword = async (req, res) => {
 
     await user.save();
 
-    console.log("Password reset successful for:", user.email);
-    res.status(200).json({
-      msg: "Password reset successful. You can now login with your new password.",
+    return res.status(200).json({
+      msg: "Password reset successful",
     });
   } catch (err) {
     console.error("Reset password error:", err.message);
-    res.status(500).json({ msg: "Server error" });
+    return res.status(500).json({ msg: "Server error" });
   }
 };
 
+/* ========================= GET USER ========================= */
 export const getMe = async (req, res) => {
   try {
-    if (!req.user || !req.user.id) {
+    if (!req.user?.id) {
       return res.status(401).json({ msg: "Unauthorized" });
     }
 
     const user = await User.findById(req.user.id).select("-password");
-
     if (!user) {
       return res.status(404).json({ msg: "User not found" });
     }
@@ -328,10 +345,11 @@ export const getMe = async (req, res) => {
     return res.json(user);
   } catch (err) {
     console.error("Get user error:", err.message);
-    res.status(500).json({ msg: "Server error" });
+    return res.status(500).json({ msg: "Server error" });
   }
 };
 
+/* ========================= UPDATE PROFILE ========================= */
 export const updateProfile = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -339,27 +357,27 @@ export const updateProfile = async (req, res) => {
   }
 
   try {
-    if (!req.user || !req.user.id) {
+    if (!req.user?.id) {
       return res.status(401).json({ msg: "Unauthorized" });
     }
 
     const { name, email } = req.body;
+    const updateData = {};
 
+    if (name) updateData.name = name.trim();
     if (email) {
-      const normalizedEmail = String(email).trim().toLowerCase();
-      const existingUser = await User.findOne({
+      const normalizedEmail = email.trim().toLowerCase();
+      const exists = await User.findOne({
         email: normalizedEmail,
         _id: { $ne: req.user.id },
       });
 
-      if (existingUser) {
+      if (exists) {
         return res.status(400).json({ msg: "Email already in use" });
       }
-    }
 
-    const updateData = {};
-    if (name) updateData.name = name.trim();
-    if (email) updateData.email = String(email).trim().toLowerCase();
+      updateData.email = normalizedEmail;
+    }
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
@@ -367,14 +385,9 @@ export const updateProfile = async (req, res) => {
       { new: true, runValidators: true }
     ).select("-password");
 
-    if (!user) {
-      return res.status(404).json({ msg: "User not found" });
-    }
-
-    console.log("Profile updated for:", user.email);
     return res.json(user);
   } catch (err) {
     console.error("Update profile error:", err.message);
-    res.status(500).json({ msg: "Server error" });
+    return res.status(500).json({ msg: "Server error" });
   }
 };

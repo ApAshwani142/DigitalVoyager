@@ -113,20 +113,8 @@ const Signup = () => {
       const data = await res.json();
 
       if (res.ok) {
-        // Check if email was actually sent
-        if (data.emailSent) {
-          setMessage("OTP sent! Check your email inbox (and spam folder).");
-          toast.success("OTP sent successfully! Check your email inbox.");
-        } else {
-          // Email service not configured - OTP might be in response or logs
-          if (data.otp) {
-            setMessage(`Email service not configured. Your OTP is: ${data.otp} (This is for testing only - configure email service for production)`);
-            toast.warning(`OTP: ${data.otp} (Email service not configured - check Render logs)`);
-          } else {
-            setMessage("OTP generated. Please check Render backend logs if email service is not configured.");
-            toast.warning("Email service not configured. Check backend logs for OTP.");
-          }
-        }
+        setMessage("OTP sent! Check your email inbox (and spam folder).");
+        toast.success("OTP sent successfully! Check your email inbox.");
         setShowOtpBox(true);
         setCountdown(60);
         setResendEnabled(false);
@@ -246,20 +234,8 @@ const Signup = () => {
       const data = await res.json();
 
       if (res.ok) {
-        // Check if email was actually sent
-        if (data.emailSent) {
-          setMessage("OTP resent! Check your email inbox (and spam folder).");
-          toast.success("OTP resent successfully! Check your email inbox.");
-        } else {
-          // Email service not configured
-          if (data.otp) {
-            setMessage(`Email service not configured. Your new OTP is: ${data.otp} (This is for testing only)`);
-            toast.warning(`New OTP: ${data.otp} (Email service not configured)`);
-          } else {
-            setMessage("OTP regenerated. Please check Render backend logs if email service is not configured.");
-            toast.warning("Email service not configured. Check backend logs for OTP.");
-          }
-        }
+        setMessage("OTP resent! Check your email inbox (and spam folder).");
+        toast.success("OTP resent successfully! Check your email inbox.");
         setCountdown(60);
         setResendEnabled(false);
         setOtp("");

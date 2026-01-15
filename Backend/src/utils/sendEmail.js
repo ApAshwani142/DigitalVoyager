@@ -10,25 +10,22 @@ const sendEmail = async (to, subject, message) => {
   const emailPass = process.env.EMAIL_PASS?.trim();
   const emailHost = process.env.EMAIL_HOST?.trim();
   
-  // If email is not configured, log and allow the app to continue (for development)
+  // Check for email configuration - if not present, throw error (email is required)
   if (!emailUser || !emailPass) {
     const missing = [];
     if (!emailUser) missing.push("EMAIL_USER");
     if (!emailPass) missing.push("EMAIL_PASS");
-    console.warn(`⚠️ Email service not configured. Missing: ${missing.join(", ")}`);
-    console.warn(`⚠️ Email would be sent to: ${to}`);
-    console.warn(`⚠️ Subject: ${subject}`);
-    console.warn(`⚠️ In production, please configure EMAIL_USER and EMAIL_PASS environment variables.`);
-    
-    // Check if we're in production (Render sets various env vars, but NODE_ENV might not be 'production')
-    // For now, allow the app to continue and log OTP to console instead of throwing
-    // The calling code will handle displaying appropriate messages
-    console.log("Development/testing mode: Email service not configured, skipping actual email send");
-    console.log(`Would send email to: ${to}`);
-    console.log(`Subject: ${subject}`);
-    // Return a mock success response so the calling code can continue
-    return { messageId: 'email-not-configured', accepted: [to], emailSent: false };
+    const errorMsg = `Email service not configured. Missing: ${missing.join(", ")}. Please configure EMAIL_USER and EMAIL_PASS in Render environment variables.`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
   }
+
+  // Log that we're attempting to send email
+  console.log(`📧 Attempting to send email to: ${to}`);
+  console.log(`📧 Subject: ${subject}`);
+  console.log(`📧 Using SMTP: ${emailHost || 'smtp.gmail.com (default)'}`);
+  console.log(`📧 Email user: ${emailUser}`);
+  console.log(`📧 Email host configured: ${emailHost || 'using default (smtp.gmail.com)'}`);
 
   const smtpHost = emailHost && emailHost.includes(".") ? emailHost : "smtp.gmail.com";
 
@@ -105,9 +102,10 @@ const sendEmail = async (to, subject, message) => {
         ),
       ]);
 
-      console.log(`Email sent successfully to ${to} via ${portName}`);
+      console.log(`✅ Email sent successfully to ${to} via ${portName}`);
+      console.log(`✅ Message ID: ${info.messageId}`);
       trans.close();
-      return info;
+      return { ...info, emailSent: true };
     } catch (err) {
       trans.close();
       throw err;
