@@ -7,6 +7,7 @@ import authRoutes from "./src/routes/auth.js";
 import productRoutes from "./src/routes/products.js";
 import chatRoutes from "./src/routes/chat.js";
 import contactRoutes from "./src/routes/contact.js";
+import testEmailRoutes from "./src/routes/testEmail.js";
 
 const app = express();
 
@@ -75,6 +76,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/test-email", testEmailRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
