@@ -6,24 +6,12 @@ import { promisify } from "util";
 const dnsLookup = promisify(dns.lookup);
 
 const sendEmail = async (to, subject, message) => {
-  // Check for Resend API key first (recommended for cloud platforms like Render)
   const resendApiKey = process.env.RESEND_API_KEY?.trim();
   
   if (resendApiKey) {
-    // Use Resend API (works perfectly on Render and other cloud platforms)
     try {
-      console.log(`📧 Using Resend API to send email to: ${to}`);
-      console.log(`📧 Subject: ${subject}`);
-      
       const resend = new Resend(resendApiKey);
-      
-      // Get the from email - use RESEND_FROM_EMAIL if set, otherwise use Resend's default domain
-      // NOTE: Do NOT use EMAIL_USER as fallback since it's likely a Gmail address
-      // Gmail.com domain cannot be verified with Resend - you must use a verified domain or onboarding@resend.dev
-      const fromEmail = process.env.RESEND_FROM_EMAIL?.trim() || 
-                       "onboarding@resend.dev";
-      
-      console.log(`📧 From email: ${fromEmail}`);
+      const fromEmail = process.env.RESEND_FROM_EMAIL?.trim() || "onboarding@resend.dev";
       
       const { data, error } = await resend.emails.send({
         from: `Digital Voyager <${fromEmail}>`,
@@ -44,55 +32,41 @@ const sendEmail = async (to, subject, message) => {
       });
 
       if (error) {
-        console.error("❌ Resend API error:", error);
+        console.error("Resend API error:", error);
         throw new Error(`Resend API error: ${error.message || JSON.stringify(error)}`);
       }
 
-      console.log(`✅ Email sent successfully via Resend to ${to}`);
-      console.log(`✅ Email ID: ${data?.id}`);
+      console.log(`Email sent successfully to ${to} via Resend`);
       return { messageId: data?.id, emailSent: true, service: 'resend' };
     } catch (error) {
-      console.error("❌ Resend email failed:", error.message);
+      console.error("Failed to send email via Resend:", error.message);
       throw new Error(`Failed to send email via Resend: ${error.message}`);
     }
   }
 
-  // Fallback to Gmail SMTP (may not work on Render due to network restrictions)
+  // Fallback to Gmail SMTP
   const emailUser = process.env.EMAIL_USER?.trim();
   const emailPass = process.env.EMAIL_PASS?.trim();
   const emailHost = process.env.EMAIL_HOST?.trim();
   
   if (!emailUser || !emailPass) {
-    const errorMsg = `Email service not configured. Please set either:
-1. RESEND_API_KEY (recommended for cloud platforms like Render) - Get free API key at https://resend.com
-2. EMAIL_USER and EMAIL_PASS (Gmail SMTP - may not work on Render due to network restrictions)
-
-For Render hosting, Resend is strongly recommended as Gmail SMTP connections are often blocked.`;
-    console.error(`❌ ${errorMsg}`);
+    const errorMsg = "Email service not configured. Please set RESEND_API_KEY or EMAIL_USER and EMAIL_PASS.";
+    console.error(errorMsg);
     throw new Error(errorMsg);
   }
-
-  console.log(`📧 Using Gmail SMTP to send email to: ${to}`);
-  console.log(`📧 Subject: ${subject}`);
-  console.log(`📧 Using SMTP: ${emailHost || 'smtp.gmail.com (default)'}`);
-  console.log(`⚠️ Note: Gmail SMTP may not work on Render due to network restrictions. Consider using Resend API instead.`);
 
   const smtpHost = emailHost && emailHost.includes(".") ? emailHost : "smtp.gmail.com";
 
   try {
     await dnsLookup(smtpHost);
   } catch (dnsError) {
-    throw new Error(
-      `Cannot resolve hostname ${smtpHost}. Check your internet connection and DNS settings.`
-    );
+    throw new Error(`Cannot resolve hostname ${smtpHost}. Check your DNS settings.`);
   }
 
-  // Clean up email password (remove any whitespace)
   const cleanEmailPass = String(emailPass).trim().replace(/\s+/g, "");
   const cleanEmailUser = String(emailUser).trim();
 
-  const tryPort465 = () => {
-    console.log(`🔌 Attempting connection via port 465 (SSL)...`);
+  const createTransporter465 = () => {
     return nodemailer.createTransport({
       host: smtpHost,
       port: 465,
@@ -107,14 +81,10 @@ For Render hosting, Resend is strongly recommended as Gmail SMTP connections are
       connectionTimeout: 60000,
       greetingTimeout: 30000,
       socketTimeout: 60000,
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 1,
     });
   };
 
-  const tryPort587 = () => {
-    console.log(`🔌 Attempting connection via port 587 (TLS)...`);
+  const createTransporter587 = () => {
     return nodemailer.createTransport({
       host: smtpHost,
       port: 587,
@@ -130,9 +100,6 @@ For Render hosting, Resend is strongly recommended as Gmail SMTP connections are
       connectionTimeout: 60000,
       greetingTimeout: 30000,
       socketTimeout: 60000,
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 1,
     });
   };
 
@@ -146,18 +113,12 @@ For Render hosting, Resend is strongly recommended as Gmail SMTP connections are
     </div>`,
   };
 
-  const attemptSend = async (createTransporter, portName) => {
+  const attemptSend = async (createTransporter) => {
     let trans;
     try {
       trans = createTransporter();
-      
-      // Verify connection first
-      console.log(`🔍 Verifying SMTP connection for ${portName}...`);
       await trans.verify();
-      console.log(`✅ SMTP connection verified for ${portName}`);
       
-      // Send email with longer timeout
-      console.log(`📤 Sending email via ${portName}...`);
       const info = await Promise.race([
         trans.sendMail(mailOptions),
         new Promise((_, reject) =>
@@ -165,81 +126,50 @@ For Render hosting, Resend is strongly recommended as Gmail SMTP connections are
         ),
       ]);
 
-      console.log(`✅ Email sent successfully to ${to} via ${portName}`);
-      console.log(`✅ Message ID: ${info.messageId}`);
+      console.log(`Email sent successfully to ${to}`);
       if (trans.close) trans.close();
       return { ...info, emailSent: true, service: 'smtp' };
     } catch (err) {
-      console.error(`❌ Error on ${portName}:`, err.code, err.message);
+      console.error("SMTP error:", err.code, err.message);
       if (trans && trans.close) trans.close();
       throw err;
     }
   };
 
-  // Try multiple ports with detailed error logging
   let lastError = null;
   
-  // Try port 465 first (SSL)
   try {
-    return await attemptSend(tryPort465, "port 465 (SSL)");
+    return await attemptSend(createTransporter465);
   } catch (error465) {
-    console.error(`❌ Port 465 failed:`, error465.code, error465.message);
     lastError = error465;
-    
-    // Try port 587 (TLS)
     try {
-      return await attemptSend(tryPort587, "port 587 (TLS)");
+      return await attemptSend(createTransporter587);
     } catch (error587) {
-      console.error(`❌ Port 587 failed:`, error587.code, error587.message);
       lastError = error587;
     }
   }
 
-  // All ports failed - provide detailed error message
   const finalError = lastError;
   const isAuthError =
     finalError.code === "EAUTH" ||
     finalError.message?.includes("authentication") ||
-    finalError.message?.includes("Invalid login") ||
-    finalError.message?.includes("Username and Password not accepted");
+    finalError.message?.includes("Invalid login");
     
   const isTimeoutError =
     finalError.code === "ETIMEDOUT" ||
     finalError.code === "ECONNREFUSED" ||
-    finalError.message?.includes("timeout") ||
-    finalError.message?.includes("ECONNREFUSED");
+    finalError.message?.includes("timeout");
 
   let errorMsg;
   if (isAuthError) {
-    errorMsg = `Gmail authentication failed (Code: ${finalError.code}). Please verify:
-1. You're using a Gmail App Password (not your regular password)
-2. 2-Step Verification is enabled on your Gmail account
-3. The App Password is correct (16 characters, no spaces)
-4. The EMAIL_USER matches the Gmail account that generated the App Password
-
-RECOMMENDED: Switch to Resend API (free, works on Render). Get API key at https://resend.com`;
+    errorMsg = `Gmail authentication failed. Please verify your credentials.`;
   } else if (isTimeoutError) {
-    errorMsg = `Cannot connect to Gmail SMTP server (Code: ${finalError.code}). 
-
-⚠️ Render blocks outbound SMTP connections to Gmail. This is why you're getting ETIMEDOUT errors.
-
-✅ SOLUTION: Use Resend API instead (works perfectly on Render):
-1. Sign up for free at https://resend.com (3,000 emails/month free)
-2. Get your API key from Resend dashboard
-3. Set RESEND_API_KEY in Render environment variables
-4. Optionally set RESEND_FROM_EMAIL (or it will use your EMAIL_USER)
-5. Redeploy your backend
-
-Resend is modern, reliable, and designed for cloud platforms like Render.`;
+    errorMsg = `Cannot connect to Gmail SMTP server. Consider using Resend API instead.`;
   } else {
-    errorMsg = `Email sending failed: ${finalError.message || finalError.code || "Unknown error"}. Error code: ${finalError.code || "N/A"}
-
-RECOMMENDED: Switch to Resend API for reliable email delivery on Render.`;
+    errorMsg = `Email sending failed: ${finalError.message || "Unknown error"}`;
   }
 
-  console.error("❌ All SMTP connection attempts failed");
-  console.error("❌ Final error:", errorMsg);
-  console.error("❌ Error details:", JSON.stringify(finalError, null, 2));
+  console.error("All SMTP connection attempts failed:", errorMsg);
   throw new Error(errorMsg);
 };
 

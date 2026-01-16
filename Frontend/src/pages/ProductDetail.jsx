@@ -5,8 +5,11 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import ProductImageGallery from '../components/ProductImageGallery';
 import ProductInfo from '../components/ProductInfo';
-import LoadingSpinner from '../components/LoadingSpinner'; // Assuming you have this
-import ErrorMessage from '../components/ErrorMessage';     // Assuming you have this
+import ProductDetailHeader from '../components/ProductDetailHeader';
+import ProductDetailError from '../components/ProductDetailError';
+import ProductDescription from '../components/ProductDescription';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
 import { toast } from 'react-toastify';
 import { isHardcodedService, getHardcodedService } from '../utils/hardcodedServices';
 import { API_ENDPOINTS } from '../config/api';
@@ -69,7 +72,6 @@ const ProductDetail = () => {
           const errorMsg = err.response?.data?.msg || 'Product not found';
           setError(`${errorMsg}. It may have been deleted or does not exist.`);
           toast.error("Product not found.");
-          // Redirect to products page after 3 seconds
           setTimeout(() => {
             navigate("/products");
           }, 3000);
@@ -100,31 +102,7 @@ const ProductDetail = () => {
   if (loading) return <LoadingSpinner message="Loading product details..." />;
   
   if (error) {
-    return (
-      <div className="bg-[#0b1220] text-white min-h-screen py-12 px-4 md:px-6">
-        <div className="max-w-4xl mx-auto">
-          <ErrorMessage message={error} />
-          <div className="mt-6 flex gap-4 justify-center">
-            <motion.button
-              onClick={() => navigate("/products")}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-6 py-3 bg-gradient-to-r from-sky-500 to-cyan-400 rounded-lg font-semibold shadow-lg"
-            >
-              Back to Products
-            </motion.button>
-            <motion.button
-              onClick={() => window.location.reload()}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-6 py-3 bg-[#111827] border border-gray-700 rounded-lg font-semibold hover:border-sky-400 transition"
-            >
-              Retry
-            </motion.button>
-          </div>
-        </div>
-      </div>
-    );
+    return <ProductDetailError error={error} />;
   }
   
   if (!product) {
@@ -156,14 +134,7 @@ const ProductDetail = () => {
         animate="animate"
         exit="exit"
       >
-        <motion.h1 
-          className="text-3xl md:text-4xl font-extrabold mb-8 text-center text-white"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          {product.name}
-        </motion.h1>
+        <ProductDetailHeader productName={product.name} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           <motion.div 
@@ -182,18 +153,7 @@ const ProductDetail = () => {
           </motion.div>
         </div>
         
-        <motion.div
-          className="mt-12 bg-[#111827] p-6 md:p-8 rounded-xl border border-gray-700 shadow-lg"
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-        >
-          <h2 className="text-2xl font-bold mb-4 text-white">Product Description</h2>
-          <p className="text-gray-300 leading-relaxed">
-            {product.description || "No detailed description available for this product."}
-          </p>
-        </motion.div>
-        
+        <ProductDescription description={product.description} />
       </motion.div>
     </div>
   );

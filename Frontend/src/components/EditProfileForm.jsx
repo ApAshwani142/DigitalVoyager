@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Save, X } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import { API_ENDPOINTS } from "../config/api";
+import EditProfileFormFields from "./EditProfileFormFields";
+import EditProfileFormActions from "./EditProfileFormActions";
 
 const EditProfileForm = ({ userData, onCancel, onSave }) => {
   const { token } = useAuth();
@@ -68,7 +69,6 @@ const EditProfileForm = ({ userData, onCancel, onSave }) => {
     } catch (err) {
       console.error("Error updating profile:", err);
       
-      // Handle different error types
       if (err.code === 'ECONNREFUSED' || err.message.includes('Network Error')) {
         toast.error("Cannot connect to server. Please ensure the backend server is running.");
       } else if (err.response?.status === 404) {
@@ -92,70 +92,17 @@ const EditProfileForm = ({ userData, onCancel, onSave }) => {
       onSubmit={handleSubmit}
       className="space-y-6"
     >
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">
-          <User className="w-4 h-4 inline mr-2" />
-          Full Name
-        </label>
-        <input
-          type="text"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className={`w-full px-4 py-3 rounded-lg bg-[#0d1325] border ${
-            errors.name ? "border-red-500" : "border-gray-700"
-          } text-white focus:outline-none focus:ring-2 focus:ring-sky-500`}
-          placeholder="Enter your full name"
-        />
-        {errors.name && (
-          <p className="text-red-400 text-sm mt-1">{errors.name}</p>
-        )}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">
-          <Mail className="w-4 h-4 inline mr-2" />
-          Email Address
-        </label>
-        <input
-          type="email"
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className={`w-full px-4 py-3 rounded-lg bg-[#0d1325] border ${
-            errors.email ? "border-red-500" : "border-gray-700"
-          } text-white focus:outline-none focus:ring-2 focus:ring-sky-500`}
-          placeholder="Enter your email address"
-        />
-        {errors.email && (
-          <p className="text-red-400 text-sm mt-1">{errors.email}</p>
-        )}
-      </div>
-
-      <div className="flex gap-4 pt-4">
-        <motion.button
-          type="submit"
-          disabled={loading}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-cyan-400 rounded-lg font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Save className="w-5 h-5" />
-          {loading ? "Saving..." : "Save Changes"}
-        </motion.button>
-        <motion.button
-          type="button"
-          onClick={onCancel}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-[#111827] border border-gray-700 rounded-lg font-semibold hover:border-sky-400 transition"
-        >
-          <X className="w-5 h-5" />
-          Cancel
-        </motion.button>
-      </div>
+      <EditProfileFormFields 
+        formData={formData}
+        errors={errors}
+        onChange={setFormData}
+      />
+      <EditProfileFormActions 
+        loading={loading}
+        onCancel={onCancel}
+      />
     </motion.form>
   );
 };
 
 export default EditProfileForm;
-
-

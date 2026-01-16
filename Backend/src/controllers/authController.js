@@ -42,9 +42,8 @@ export const sendOtp = async (req, res) => {
       },
     };
 
-    // Send OTP email - email service is now required
     try {
-      const emailResult = await sendEmail(
+      await sendEmail(
         normalizedEmail,
         "OTP for Digital Voyager Registration",
         `Hello ${name},
@@ -59,26 +58,14 @@ Best regards,
 Digital Voyager Team`
       );
       
-      console.log("✅ OTP email sent successfully to:", normalizedEmail);
-      console.log("✅ Email result:", emailResult);
-      
       return res.status(200).json({ 
-        msg: "OTP sent successfully! Please check your email inbox (and spam folder).",
+        msg: "OTP sent successfully! Please check your email inbox.",
         emailSent: true
       });
     } catch (emailError) {
-      console.error("❌ Failed to send OTP email:", emailError.message);
-      console.error("❌ Email error details:", emailError);
-      
-      // Log OTP to console as fallback (for debugging)
-      console.log("=".repeat(60));
-      console.log(`⚠️ FALLBACK - OTP FOR ${normalizedEmail}: ${normalizedOtp}`);
-      console.log(`⚠️ Email error: ${emailError.message}`);
-      console.log("=".repeat(60));
-      
-      // Return error - email is required
+      console.error("Failed to send OTP email:", emailError.message);
       return res.status(500).json({
-        msg: `Failed to send OTP email: ${emailError.message}. Please check your email configuration in Render.`,
+        msg: `Failed to send OTP email: ${emailError.message}`,
         error: emailError.message,
       });
     }
@@ -159,9 +146,8 @@ export const resendOtp = async (req, res) => {
     otpData.otp = normalizedOtp;
     otpData.expires = Date.now() + 5 * 60 * 1000;
 
-    // Resend OTP email - email service is now required
     try {
-      const emailResult = await sendEmail(
+      await sendEmail(
         normalizedEmail,
         "Resend OTP for Digital Voyager Registration",
         `Hello ${otpData.userData.name},
@@ -176,26 +162,14 @@ Best regards,
 Digital Voyager Team`
       );
       
-      console.log("✅ OTP resent successfully to:", normalizedEmail);
-      console.log("✅ Email result:", emailResult);
-      
       return res.status(200).json({ 
-        msg: "OTP resent successfully! Please check your email inbox (and spam folder).",
+        msg: "OTP resent successfully! Please check your email inbox.",
         emailSent: true
       });
     } catch (emailError) {
-      console.error("❌ Failed to resend OTP email:", emailError.message);
-      console.error("❌ Email error details:", emailError);
-      
-      // Log OTP to console as fallback (for debugging)
-      console.log("=".repeat(60));
-      console.log(`⚠️ FALLBACK - RESEND OTP FOR ${normalizedEmail}: ${normalizedOtp}`);
-      console.log(`⚠️ Email error: ${emailError.message}`);
-      console.log("=".repeat(60));
-      
-      // Return error - email is required
+      console.error("Failed to resend OTP email:", emailError.message);
       return res.status(500).json({
-        msg: `Failed to resend OTP email: ${emailError.message}. Please check your email configuration in Render.`,
+        msg: `Failed to resend OTP email: ${emailError.message}`,
         error: emailError.message,
       });
     }

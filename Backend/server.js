@@ -11,51 +11,34 @@ import testEmailRoutes from "./src/routes/testEmail.js";
 
 const app = express();
 
-// connect to database
 connectDB();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Allowed origins - production domains
 const allowedOrigins = [
   "https://dgvoyager.com",
   "https://www.dgvoyager.com",
   "http://dgvoyager.com",
   "http://www.dgvoyager.com",
-  "http://localhost:5173", // For local development (Vite default)
-  "http://localhost:3000", // For local development
+  "http://localhost:5173",
+  "http://localhost:3000",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps, Postman, or curl requests)
       if (!origin) {
         return callback(null, true);
       }
       
-      // Check if origin exactly matches an allowed origin
-      if (allowedOrigins.includes(origin)) {
-        console.log("CORS: Allowing origin:", origin);
+      if (allowedOrigins.includes(origin) || origin.includes('dgvoyager.com')) {
         return callback(null, true);
       }
       
-      // Additional check for dgvoyager.com variations (with or without www)
-      if (origin.includes('dgvoyager.com')) {
-        console.log("CORS: Allowing dgvoyager.com origin:", origin);
-        return callback(null, true);
-      }
-      
-      // Log blocked origins for debugging
-      console.log("CORS: Blocked origin:", origin);
-      console.log("CORS: Allowed origins:", allowedOrigins);
-      
-      // In production, block unknown origins; in development, allow for testing
       if (process.env.NODE_ENV === 'production') {
         callback(new Error(`Origin ${origin} is not allowed by CORS policy`));
       } else {
-        console.log("CORS: Development mode - allowing origin:", origin);
         callback(null, true);
       }
     },
@@ -69,7 +52,7 @@ app.use(
 );
 
 app.get("/", (req, res) => {
-  res.send("API Running... 🚀");
+  res.send("API Running...");
 });
 
 app.use("/api/auth", authRoutes);
