@@ -4,7 +4,8 @@ import sendEmail from "../utils/sendEmail.js";
 const router = express.Router();
 
 // Test email endpoint - for debugging
-router.post("/test", async (req, res) => {
+// This route handles POST /api/test-email
+router.post("/", async (req, res) => {
   try {
     const { to } = req.body;
     const testEmail = to || process.env.EMAIL_USER;
