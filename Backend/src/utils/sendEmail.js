@@ -17,10 +17,13 @@ const sendEmail = async (to, subject, message) => {
       
       const resend = new Resend(resendApiKey);
       
-      // Get the from email - use RESEND_FROM_EMAIL or default to Resend's verified domain
-      // IMPORTANT: Do NOT use EMAIL_USER here as it might be a Gmail address which requires domain verification
-      // Use onboarding@resend.dev (Resend's default verified domain) or your own verified domain via RESEND_FROM_EMAIL
-      const fromEmail = process.env.RESEND_FROM_EMAIL?.trim() || "onboarding@resend.dev";
+      // Get the from email - use RESEND_FROM_EMAIL if set, otherwise use Resend's default domain
+      // NOTE: Do NOT use EMAIL_USER as fallback since it's likely a Gmail address
+      // Gmail.com domain cannot be verified with Resend - you must use a verified domain or onboarding@resend.dev
+      const fromEmail = process.env.RESEND_FROM_EMAIL?.trim() || 
+                       "onboarding@resend.dev";
+      
+      console.log(`📧 From email: ${fromEmail}`);
       
       const { data, error } = await resend.emails.send({
         from: `Digital Voyager <${fromEmail}>`,
