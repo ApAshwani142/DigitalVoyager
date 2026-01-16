@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import logo from "../assets/DigitalVoyagerLogo.jpeg";
 
 const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,8 +33,15 @@ const Navbar = () => {
     <>
       <header className="fixed top-0 left-0 w-full bg-[#1C2331] text-white shadow-md z-50">
         <div className="max-w-7xl mx-auto flex justify-between items-center px-6 md:px-12 py-4">
-          <div className="flex items-center space-x-2">
-            <Link to="/" className="text-2xl font-bold">Digital Voyager</Link>
+          <div className="flex items-center space-x-3">
+            <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+              <img 
+                src={logo} 
+                alt="Digital Voyager Logo" 
+                className="h-10 w-10 object-contain"
+              />
+              <span className="text-2xl font-bold">Digital Voyager</span>
+            </Link>
           </div>
 
           <nav className="hidden md:flex items-center space-x-6 text-gray-300">
