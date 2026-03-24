@@ -59,3 +59,6 @@ const AuthenticatedProductsSection = ({ products, loading, error }) => {
 
 export default AuthenticatedProductsSection;
 
+
+
+

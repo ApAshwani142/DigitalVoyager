@@ -16,3 +16,6 @@ const ProductDetailHeader = ({ productName }) => {
 
 export default ProductDetailHeader;
 
+
+
+

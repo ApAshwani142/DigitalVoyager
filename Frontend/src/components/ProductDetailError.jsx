@@ -35,3 +35,6 @@ const ProductDetailError = ({ error }) => {
 
 export default ProductDetailError;
 
+
+
+
