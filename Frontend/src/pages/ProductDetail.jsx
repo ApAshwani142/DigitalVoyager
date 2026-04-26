@@ -27,6 +27,15 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  const handleBuyNow = () => {
+    navigate("/checkout", {
+      state: {
+        productName: product?.name,
+        amount: product?.price,
+      },
+    });
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -144,12 +153,14 @@ const ProductDetail = () => {
           >
             <ProductImageGallery images={product.images || []} />
           </motion.div>
+
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.6, duration: 0.6 }}
           >
-            <ProductInfo product={product} />
+            {/* ✅ UPDATED HERE */}
+            <ProductInfo product={product} onBuyNow={handleBuyNow} />
           </motion.div>
         </div>
         

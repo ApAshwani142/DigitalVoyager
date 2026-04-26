@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PaymentButton from "./PaymentButton";
 
-const PaymentForm = () => {
-  const [amount, setAmount] = useState(500);
+const PaymentForm = ({ initialAmount = 500 }) => {
+  const [amount, setAmount] = useState(initialAmount);
+
+  // Sync when amount comes from CheckoutPage
+  useEffect(() => {
+    setAmount(initialAmount);
+  }, [initialAmount]);
 
   return (
     <div className="flex flex-col items-center w-full">

@@ -8,12 +8,13 @@ const buttonVariants = {
   tap: { scale: 0.95 },
 };
 
-const ProductInfo = ({ product }) => {
+const ProductInfo = ({ product, onBuyNow }) => {
   const { isAuthenticated } = useAuth();
 
   const handleBuyClick = () => {
     if (isAuthenticated) {
-      toast.success(`Purchased ${product.name}! (Simulated)`);
+      // ✅ Call checkout navigation
+      onBuyNow();
     } else {
       toast.error("Please log in to buy this product.");
     }
@@ -35,6 +36,7 @@ const ProductInfo = ({ product }) => {
         >
           ${product.price}
         </motion.p>
+
         <motion.p
           className="text-gray-300 leading-relaxed mb-6"
           initial={{ opacity: 0, x: 10 }}
@@ -47,7 +49,11 @@ const ProductInfo = ({ product }) => {
 
       <motion.button
         onClick={handleBuyClick}
-        className={`w-full px-6 py-3 rounded-lg font-semibold text-white transition-colors duration-300 ${isAuthenticated ? 'bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 shadow-lg' : 'bg-gray-600 cursor-not-allowed'}`}
+        className={`w-full px-6 py-3 rounded-lg font-semibold text-white transition-colors duration-300 ${
+          isAuthenticated
+            ? 'bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 shadow-lg'
+            : 'bg-gray-600 cursor-not-allowed'
+        }`}
         variants={buttonVariants}
         whileHover={isAuthenticated ? "hover" : ""}
         whileTap={isAuthenticated ? "tap" : ""}

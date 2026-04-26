@@ -10,7 +10,7 @@ const PaymentButton = ({ amount }) => {
       return;
     }
 
-    // 1️⃣ Create order
+    //  Create order
     const orderRes = await fetch("http://localhost:5000/api/payment/order", {
       method: "POST",
       headers: {
@@ -21,7 +21,7 @@ const PaymentButton = ({ amount }) => {
 
     const order = await orderRes.json();
 
-    // 2️⃣ Open Razorpay
+    //  Open Razorpay
     const options = {
       key: "rzp_test_xxxxx",
       amount: order.amount,
@@ -31,7 +31,7 @@ const PaymentButton = ({ amount }) => {
       order_id: order.id,
 
       handler: async function (response) {
-        // 3️⃣ Verify payment
+        //  Verify payment
         await fetch("http://localhost:5000/api/payment/verify", {
           method: "POST",
           headers: {
