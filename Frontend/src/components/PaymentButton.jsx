@@ -1,7 +1,9 @@
 import loadRazorpay from "../utils/loadRazorpay";
+import { useNavigate } from "react-router-dom";
 
 const PaymentButton = ({ amount }) => {
   const API_URL = import.meta.env.VITE_API_URL;
+  const navigate = useNavigate();
 
   const handlePayment = async () => {
     try {
@@ -58,7 +60,7 @@ const PaymentButton = ({ amount }) => {
             }
 
             //Success redirect
-            window.location.href = "/success";
+            navigate("/success");
           } catch (err) {
             console.error("Verification Error:", err);
             alert("Payment verification failed, but payment may be successful.");
