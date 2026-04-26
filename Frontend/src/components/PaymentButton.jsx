@@ -11,7 +11,7 @@ const PaymentButton = ({ amount }) => {
     }
 
     //  Create order
-    const orderRes = await fetch("http://localhost:5000/api/payment/order", {
+    const orderRes = await fetch("https://digitalvoyager.onrender.com/api/payment/order", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -32,7 +32,7 @@ const PaymentButton = ({ amount }) => {
 
       handler: async function (response) {
         //  Verify payment
-        await fetch("http://localhost:5000/api/payment/verify", {
+        await fetch("https://digitalvoyager.onrender.com/api/payment/verify", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
