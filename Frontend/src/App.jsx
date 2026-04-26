@@ -14,6 +14,9 @@ import ProfilePage from "./pages/ProfilePage";
 import EditProfilePage from "./pages/EditProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import ContactPage from "./pages/ContactPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import SuccessPage from "./pages/SuccessPage";
+import FailurePage from "./pages/FailurePage";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -26,11 +29,21 @@ function App() {
       <AuthProvider>
         <div className="bg-[#0b1220] text-white min-h-screen flex flex-col">
           <Navbar />
+
           <div className="flex-grow">
             <Routes>
+
+              {/* Public Routes */}
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/products" element={<ProductsPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:resetToken" element={<ResetPassword />} />
+
+              {/* Protected Routes */}
               <Route
                 path="/products/:id"
                 element={
@@ -39,6 +52,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/profile"
                 element={
@@ -47,6 +61,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/profile/edit"
                 element={
@@ -55,6 +70,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/profile/settings"
                 element={
@@ -63,13 +79,38 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Signup />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password/:resetToken" element={<ResetPassword />} />
+
+              {/* PAYMENT ROUTES */}
+              <Route
+                path="/checkout"
+                element={
+                  <ProtectedRoute>
+                    <CheckoutPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/success"
+                element={
+                  <ProtectedRoute>
+                    <SuccessPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/failure"
+                element={
+                  <ProtectedRoute>
+                    <FailurePage />
+                  </ProtectedRoute>
+                }
+              />
+
             </Routes>
           </div>
+
           <Footer />
           <Chatbot />
           <ToastContainer position="top-right" autoClose={3000} />

@@ -8,6 +8,7 @@ import productRoutes from "./src/routes/products.js";
 import chatRoutes from "./src/routes/chat.js";
 import contactRoutes from "./src/routes/contact.js";
 import testEmailRoutes from "./src/routes/testEmail.js";
+import paymentRoutes from "./src/routes/payment.js";
 
 const app = express();
 
@@ -60,6 +61,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/test-email", testEmailRoutes);
+app.use("/api/payment", paymentRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
