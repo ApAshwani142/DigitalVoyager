@@ -16,7 +16,6 @@ import SettingsPage from "./pages/SettingsPage";
 import ContactPage from "./pages/ContactPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import SuccessPage from "./pages/SuccessPage";
-import FailurePage from "./pages/FailurePage";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -95,15 +94,6 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <SuccessPage />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/failure"
-                element={
-                  <ProtectedRoute>
-                    <FailurePage />
                   </ProtectedRoute>
                 }
               />
